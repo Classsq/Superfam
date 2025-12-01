@@ -1,0 +1,422 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<!-- CRITICAL FIX: This makes it scale correctly on mobile -->
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<style>
+    @import url('https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap');
+
+    :root {
+        --bg-color: #ffdde5;
+        --frame-color: #fff;
+        --accent-color: #ff8fab;
+        --text-color: #6d3b47;
+        --outline-color: #ffb7c5;
+    }
+
+    body {
+        background-color: var(--bg-color);
+        background-image: radial-gradient(#ffabc2 10%, transparent 11%),
+                          radial-gradient(#ffabc2 10%, transparent 11%);
+        background-size: 30px 30px;
+        background-position: 0 0, 15px 15px;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        height: 100vh;
+        /* Fix for mobile browser bars */
+        height: 100dvh; 
+        margin: 0;
+        overflow: hidden;
+        font-family: 'Press Start 2P', cursive;
+    }
+
+    /* The Cute Game Container */
+    .game-container {
+        position: relative;
+        /* Responsive Width logic */
+        width: 90vw; 
+        max-width: 750px;
+        aspect-ratio: 3/2;
+        
+        border: 8px solid white;
+        outline: 8px solid var(--outline-color); 
+        border-radius: 25px;
+        box-shadow: 
+            0 20px 40px rgba(255, 105, 180, 0.3),
+            inset 0 0 50px rgba(85, 34, 51, 0.2);
+        background: #332228;
+        overflow: hidden;
+        transition: all 0.3s ease;
+    }
+
+    /* The Pixel Art Image Layer */
+    .scene-layer {
+        position: absolute;
+        top: -5%;
+        left: -5%;
+        width: 110%;
+        height: 110%;
+        z-index: 1;
+        animation: gentle-float 6s ease-in-out infinite; 
+    }
+
+    .pixel-image {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+        image-rendering: pixelated;
+        filter: sepia(0.2) hue-rotate(-10deg) saturate(1.1) contrast(1.05);
+    }
+
+    /* Scanlines */
+    .scanlines {
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: linear-gradient(
+            to bottom,
+            rgba(255,255,255,0),
+            rgba(255,255,255,0) 50%,
+            rgba(255,192,203,0.15) 50%, 
+            rgba(255,192,203,0.15)
+        );
+        background-size: 100% 4px;
+        z-index: 10;
+        pointer-events: none;
+    }
+
+    /* Dialogue Box */
+    .dialogue-box {
+        position: absolute;
+        bottom: 30px;
+        left: 50%;
+        transform: translateX(-50%);
+        width: 80%;
+        background: rgba(255, 255, 255, 0.85);
+        backdrop-filter: blur(4px);
+        border: 3px solid var(--accent-color);
+        border-radius: 15px;
+        padding: 18px;
+        z-index: 12;
+        display: flex;
+        flex-direction: column;
+        gap: 10px;
+        box-shadow: 0 8px 15px rgba(255, 143, 171, 0.3);
+    }
+
+    .name-tag {
+        color: white;
+        font-size: 10px;
+        background: var(--accent-color);
+        display: inline-block;
+        width: fit-content;
+        padding: 4px 8px;
+        border-radius: 8px;
+        text-shadow: 1px 1px 0 rgba(0,0,0,0.1);
+    }
+
+    .text-content {
+        font-size: 12px;
+        line-height: 1.8;
+        color: var(--text-color);
+        min-height: 20px;
+    }
+
+    /* Floating Particles */
+    .heart-particle {
+        position: absolute;
+        font-size: 22px;
+        z-index: 5;
+        pointer-events: none;
+        opacity: 0;
+        filter: drop-shadow(0 2px 4px rgba(255, 100, 150, 0.3));
+    }
+
+    /* Emote Bubble */
+    .emote-bubble {
+        position: absolute;
+        top: 15%;
+        left: 50%;
+        transform: translateX(-50%) scale(0);
+        background: white;
+        padding: 12px;
+        border-radius: 50%;
+        border: 3px solid var(--accent-color);
+        z-index: 8;
+        font-size: 28px;
+        animation: pop-emote 5s infinite;
+    }
+
+    /* Music Button Styles */
+    .music-container {
+        position: absolute;
+        top: 15px;
+        right: 15px;
+        z-index: 50;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 5px;
+    }
+
+    .music-btn {
+        background: white;
+        border: 2px solid var(--accent-color);
+        border-radius: 50%;
+        width: 45px;
+        height: 45px;
+        cursor: pointer;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        font-size: 20px;
+        box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+        transition: transform 0.2s, background 0.3s;
+        animation: pulse-btn 2s infinite;
+        -webkit-tap-highlight-color: transparent; /* Remove mobile blue highlight */
+    }
+    
+    .music-hint {
+        background: white;
+        padding: 4px 8px;
+        border-radius: 5px;
+        font-size: 8px;
+        color: var(--accent-color);
+        border: 1px solid var(--accent-color);
+        pointer-events: none;
+        opacity: 1;
+        transition: opacity 0.5s;
+    }
+
+    .music-btn:hover { transform: scale(1.1); }
+    .music-btn:active { transform: scale(0.95); }
+
+    /* MOBILE SPECIFIC ADJUSTMENTS */
+    @media (max-width: 600px) {
+        .game-container {
+            width: 94vw; /* Wider on mobile */
+            border-width: 4px;
+            outline-width: 4px;
+            border-radius: 15px;
+        }
+
+        .dialogue-box {
+            width: 88%;
+            padding: 12px;
+            bottom: 15px;
+            border-width: 2px;
+        }
+
+        .text-content {
+            font-size: 9px; /* Slightly smaller text for small screens */
+            line-height: 1.6;
+        }
+        
+        .name-tag {
+            font-size: 8px;
+            padding: 3px 6px;
+        }
+        
+        .music-btn {
+            width: 35px;
+            height: 35px;
+            font-size: 16px;
+        }
+        
+        .music-hint {
+            font-size: 7px;
+        }
+    }
+
+    /* Animations */
+    @keyframes gentle-float {
+        0% { transform: translateY(0) rotate(0deg) scale(1); }
+        50% { transform: translateY(-8px) rotate(1deg) scale(1.02); }
+        100% { transform: translateY(0) rotate(0deg) scale(1); }
+    }
+
+    @keyframes floatUpHeart {
+        0% { transform: translateY(0) scale(0.5) rotate(0deg); opacity: 0; }
+        20% { opacity: 0.9; transform: translateY(-15px) scale(1.1) rotate(10deg); }
+        100% { transform: translateY(-80px) scale(1) rotate(-10deg); opacity: 0; }
+    }
+
+    @keyframes pop-emote {
+        0%, 85% { transform: translateX(-50%) scale(0); opacity: 0; }
+        90% { transform: translateX(-50%) scale(1.2); opacity: 1; }
+        92% { transform: translateX(-50%) scale(1); opacity: 1; }
+        97% { transform: translateX(-50%) scale(1); opacity: 1; }
+        100% { transform: translateX(-50%) scale(0); opacity: 0; }
+    }
+    
+    @keyframes pulse-btn {
+        0% { box-shadow: 0 0 0 0 rgba(255, 143, 171, 0.7); }
+        70% { box-shadow: 0 0 0 10px rgba(255, 143, 171, 0); }
+        100% { box-shadow: 0 0 0 0 rgba(255, 143, 171, 0); }
+    }
+
+    .blink-cursor::after { content: '❤️'; animation: blink 0.8s infinite; margin-left: 5px; font-size: 10px; }
+    @keyframes blink { 0%, 100% { opacity: 1; } 50% { opacity: 0; } }
+
+</style>
+</head>
+<body>
+
+<div class="game-container">
+    <div class="scanlines"></div>
+    
+    <!-- FIXED MUSIC SECTION -->
+    <div class="music-container">
+        <div class="music-hint" id="musicHint">Playing...</div>
+        <button class="music-btn" onclick="toggleMusic()" id="musicBtn">🎵</button>
+    </div>
+    
+    <!-- AUDIO: AUTOPLAY + LOOP -->
+    <audio id="bgMusic" loop autoplay>
+        <source src="https://raw.githubusercontent.com/Ariiinnnn/SuperFam-/main/%EC%83%9B%EB%B3%84%20-%20Sugar%20cookie(Royalty%20Free%20Music).mp3" type="audio/mpeg">
+    </audio>
+
+    <div class="emote-bubble">💖</div>
+
+    <div class="scene-layer">
+        <img src="https://raw.githubusercontent.com/Ariiinnnn/SuperFam-/main/pic4.png" class="pixel-image" id="gameImg" alt="Cute Pixel Family">
+    </div>
+
+    <div id="particles"></div>
+
+    <div class="dialogue-box">
+        <div class="name-tag">FAMILY MEMORIES</div>
+        <div class="text-content" id="typewriter"></div>
+    </div>
+</div>
+
+<script>
+    // 1. TYPING EFFECT
+    const messages = [
+        "Say Cheese! 📸",
+        "Best vacation ever at Hongkong Land! ✨",
+        "Look at those smiles! 😊",
+        "A memory to keep forever... 💖"
+    ];
+    
+    const textContainer = document.getElementById('typewriter');
+    let msgIndex = 0;
+    let charIndex = 0;
+    let isDeleting = false;
+
+    function typeLoop() {
+        const currentText = messages[msgIndex];
+        
+        if (isDeleting) {
+            textContainer.innerHTML = currentText.substring(0, charIndex - 1);
+            charIndex--;
+        } else {
+            textContainer.innerHTML = currentText.substring(0, charIndex + 1);
+            charIndex++;
+        }
+
+        let typeSpeed = 80;
+
+        if (!isDeleting && charIndex === currentText.length) {
+            typeSpeed = 2500; 
+            isDeleting = true;
+            textContainer.classList.add('blink-cursor');
+        } else if (isDeleting && charIndex === 0) {
+            isDeleting = false;
+            msgIndex = (msgIndex + 1) % messages.length;
+            typeSpeed = 500;
+            textContainer.classList.remove('blink-cursor');
+        }
+
+        setTimeout(typeLoop, typeSpeed);
+    }
+    typeLoop();
+
+    // 2. PARTICLE GENERATOR
+    const particleContainer = document.getElementById('particles');
+    const symbols = ['❤️', '💖', '✨', '🌸', '🍬'];
+
+    function createHeart() {
+        const heart = document.createElement('div');
+        heart.classList.add('heart-particle');
+        heart.innerText = symbols[Math.floor(Math.random() * symbols.length)];
+        
+        const x = 15 + Math.random() * 70;
+        const y = 30 + Math.random() * 50;
+        
+        heart.style.left = x + '%';
+        heart.style.top = y + '%';
+        heart.style.animation = `floatUpHeart ${2 + Math.random()}s ease-out forwards`;
+
+        particleContainer.appendChild(heart);
+        setTimeout(() => { heart.remove(); }, 3000);
+    }
+    setInterval(createHeart, 800); 
+
+    // 3. IMAGE ERROR HANDLER
+    const img = document.getElementById('gameImg');
+    img.onerror = function() {
+        this.style.display = 'none';
+        document.querySelector('.scene-layer').style.background = '#ffdde5';
+    };
+
+    // 4. MUSIC LOGIC (AUTOPLAY + FALLBACK)
+    const audio = document.getElementById('bgMusic');
+    const btn = document.getElementById('musicBtn');
+    const hint = document.getElementById('musicHint');
+    
+    audio.volume = 0.3; 
+
+    function updateMusicUI(isPlaying) {
+        if (isPlaying) {
+            btn.innerHTML = '🔊';
+            btn.style.background = '#ffe6f2';
+            btn.style.animation = 'none'; 
+            hint.style.opacity = '0'; 
+        } else {
+            btn.innerHTML = '🎵';
+            btn.style.background = 'white';
+        }
+    }
+
+    // Attempt to play immediately
+    window.addEventListener('load', function() {
+        var promise = audio.play();
+
+        if (promise !== undefined) {
+            promise.then(_ => {
+                updateMusicUI(true);
+            }).catch(error => {
+                // Autoplay blocked: Wait for first user interaction (touch/click)
+                hint.innerHTML = "Tap for Sound!";
+                document.body.addEventListener('click', function() {
+                    audio.play();
+                    updateMusicUI(true);
+                }, { once: true });
+                // Also add touchstart for mobile responsiveness
+                document.body.addEventListener('touchstart', function() {
+                    audio.play();
+                    updateMusicUI(true);
+                }, { once: true });
+            });
+        }
+    });
+
+    function toggleMusic() {
+        if (audio.paused) {
+            audio.play();
+            updateMusicUI(true);
+        } else {
+            audio.pause();
+            updateMusicUI(false);
+        }
+    }
+
+</script>
+
+</body>
+</html>
